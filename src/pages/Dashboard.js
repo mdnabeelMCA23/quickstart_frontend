@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import API from "../services/api";
-import { jwtDecode } from "jwt-decode";
+import jwtDecode from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import {
   Chart as ChartJS,
@@ -39,136 +39,24 @@ export default function Dashboard() {
   };
 
   const styles = {
-    page: {
-      minHeight: "100vh",
-      background: theme.background,
-      padding: "2rem",
-      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-      color: theme.textPrimary,
-    },
-    header: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: "2.5rem",
-      flexWrap: "wrap",
-      gap: "1rem",
-    },
-    title: {
-      fontSize: "2rem",
-      fontWeight: 700,
-      color: "white",
-      letterSpacing: "-0.025em",
-      textShadow: "0 2px 4px rgba(0,0,0,0.1)",
-    },
-    buttonGroup: {
-      display: "flex",
-      gap: "0.75rem",
-    },
-    button: {
-      padding: "0.6rem 1.25rem",
-      borderRadius: "9999px",
-      border: "none",
-      fontWeight: 600,
-      fontSize: "0.9rem",
-      cursor: "pointer",
-      transition: "all 0.15s ease",
-      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-    },
-    buttonPrimary: {
-      backgroundColor: "white",
-      color: theme.primary,
-    },
-    buttonDanger: {
-      backgroundColor: theme.danger,
-      color: "white",
-    },
-    cardsGrid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-      gap: "1.5rem",
-      marginBottom: "2.5rem",
-    },
-    card: {
-      background: theme.cardBg,
-      borderRadius: "1.5rem",
-      padding: "1.5rem",
-      boxShadow: theme.shadow,
-      transition: "transform 0.15s ease, box-shadow 0.15s ease",
-      border: `1px solid ${theme.border}`,
-    },
-    cardTitle: {
-      fontSize: "0.9rem",
-      fontWeight: 600,
-      textTransform: "uppercase",
-      letterSpacing: "0.05em",
-      color: theme.textSecondary,
-      marginBottom: "0.5rem",
-      display: "flex",
-      alignItems: "center",
-      gap: "0.5rem",
-    },
-    cardValue: {
-      fontSize: "2.2rem",
-      fontWeight: 700,
-      color: theme.textPrimary,
-      lineHeight: 1.2,
-    },
-    cardFooter: {
-      fontSize: "0.85rem",
-      color: theme.textSecondary,
-      marginTop: "0.5rem",
-    },
-    chartsRow: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-      gap: "1.5rem",
-      marginBottom: "2.5rem",
-    },
-    chartCard: {
-      background: theme.cardBg,
-      borderRadius: "1.5rem",
-      padding: "1.5rem",
-      boxShadow: theme.shadow,
-      border: `1px solid ${theme.border}`,
-    },
-    chartTitle: {
-      fontSize: "1.2rem",
-      fontWeight: 600,
-      marginBottom: "1rem",
-      color: theme.textPrimary,
-      display: "flex",
-      alignItems: "center",
-      gap: "0.5rem",
-    },
-    loadingContainer: {
-      height: "100vh",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      background: theme.background,
-    },
-    loadingSkeleton: {
-      width: "80%",
-      maxWidth: "400px",
-      background: "rgba(255,255,255,0.2)",
-      borderRadius: "1rem",
-      padding: "2rem",
-      backdropFilter: "blur(10px)",
-      color: "white",
-      textAlign: "center",
-    },
-    errorContainer: {
-      height: "100vh",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      background: theme.background,
-      color: "white",
-      textAlign: "center",
-      flexDirection: "column",
-      gap: "1rem",
-    },
+    page: { minHeight: "100vh", background: theme.background, padding: "2rem", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color: theme.textPrimary },
+    header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2.5rem", flexWrap: "wrap", gap: "1rem" },
+    title: { fontSize: "2rem", fontWeight: 700, color: "white", letterSpacing: "-0.025em", textShadow: "0 2px 4px rgba(0,0,0,0.1)" },
+    buttonGroup: { display: "flex", gap: "0.75rem" },
+    button: { padding: "0.6rem 1.25rem", borderRadius: "9999px", border: "none", fontWeight: 600, fontSize: "0.9rem", cursor: "pointer", transition: "all 0.15s ease", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)" },
+    buttonPrimary: { backgroundColor: "white", color: theme.primary },
+    buttonDanger: { backgroundColor: theme.danger, color: "white" },
+    cardsGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1.5rem", marginBottom: "2.5rem" },
+    card: { background: theme.cardBg, borderRadius: "1.5rem", padding: "1.5rem", boxShadow: theme.shadow, transition: "transform 0.15s ease, box-shadow 0.15s ease", border: `1px solid ${theme.border}` },
+    cardTitle: { fontSize: "0.9rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: theme.textSecondary, marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" },
+    cardValue: { fontSize: "2.2rem", fontWeight: 700, color: theme.textPrimary, lineHeight: 1.2 },
+    cardFooter: { fontSize: "0.85rem", color: theme.textSecondary, marginTop: "0.5rem" },
+    chartsRow: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.5rem", marginBottom: "2.5rem" },
+    chartCard: { background: theme.cardBg, borderRadius: "1.5rem", padding: "1.5rem", boxShadow: theme.shadow, border: `1px solid ${theme.border}` },
+    chartTitle: { fontSize: "1.2rem", fontWeight: 600, marginBottom: "1rem", color: theme.textPrimary, display: "flex", alignItems: "center", gap: "0.5rem" },
+    loadingContainer: { height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", background: theme.background },
+    loadingSkeleton: { width: "80%", maxWidth: "400px", background: "rgba(255,255,255,0.2)", borderRadius: "1rem", padding: "2rem", backdropFilter: "blur(10px)", color: "white", textAlign: "center" },
+    errorContainer: { height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", background: theme.background, color: "white", textAlign: "center", flexDirection: "column", gap: "1rem" },
   };
 
   // ----- Handlers -----
@@ -182,7 +70,7 @@ export default function Dashboard() {
   };
 
   // ----- Data Fetching -----
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setError(null);
       const token = localStorage.getItem("token");
@@ -202,11 +90,11 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [fetchStats]);
 
   // ----- Loading & Error States -----
   if (loading) {
