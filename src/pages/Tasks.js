@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { getTasks, createTask, deleteTask, updateTaskStatus, updateTask } from "../services/api";
-import jwtDecode from "jwt-decode"; // ✅ Fixed import
 
 // ------------------ Style Definitions ------------------
 const styles = {
@@ -28,19 +27,31 @@ const styles = {
     backgroundColor: "#ffffff",
     padding: "1.5rem",
     borderRadius: "16px",
-    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    boxShadow:
+      "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
     marginBottom: "2rem",
     border: "1px solid #edf2f7",
   },
-  formTitle: { fontSize: "1.25rem", fontWeight: 600, marginBottom: "1.25rem", color: "#0f172a" },
+  formTitle: {
+    fontSize: "1.25rem",
+    fontWeight: 600,
+    marginBottom: "1.25rem",
+    color: "#0f172a",
+  },
   input: {
     width: "100%",
     padding: "0.75rem 1rem",
     border: "1px solid #e2e8f0",
     borderRadius: "12px",
     fontSize: "1rem",
+    transition: "border-color 0.15s ease, box-shadow 0.15s ease",
     outline: "none",
+    boxSizing: "border-box",
     backgroundColor: "#ffffff",
+  },
+  inputFocus: {
+    borderColor: "#3b82f6",
+    boxShadow: "0 0 0 3px rgba(59,130,246,0.1)",
   },
   textarea: {
     width: "100%",
@@ -51,7 +62,9 @@ const styles = {
     fontFamily: "inherit",
     resize: "vertical",
     minHeight: "80px",
+    transition: "border-color 0.15s ease, box-shadow 0.15s ease",
     outline: "none",
+    boxSizing: "border-box",
     backgroundColor: "#ffffff",
   },
   select: {
@@ -62,6 +75,7 @@ const styles = {
     backgroundColor: "#ffffff",
     cursor: "pointer",
     outline: "none",
+    transition: "border-color 0.15s ease, box-shadow 0.15s ease",
     appearance: "none",
     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234b5563' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
     backgroundRepeat: "no-repeat",
@@ -74,6 +88,7 @@ const styles = {
     borderRadius: "12px",
     fontSize: "1rem",
     fontFamily: "inherit",
+    transition: "border-color 0.15s ease, box-shadow 0.15s ease",
     outline: "none",
     backgroundColor: "#ffffff",
   },
@@ -87,6 +102,7 @@ const styles = {
     fontWeight: 500,
     cursor: "pointer",
     transition: "background-color 0.15s ease, transform 0.1s ease",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
   },
   buttonSecondary: {
     backgroundColor: "#f1f5f9",
@@ -99,8 +115,18 @@ const styles = {
     cursor: "pointer",
     transition: "background-color 0.15s ease",
   },
-  buttonGroup: { display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "1rem" },
-  filterBar: { display: "flex", gap: "1rem", marginBottom: "2rem", flexWrap: "wrap" },
+  buttonGroup: {
+    display: "flex",
+    gap: "0.75rem",
+    flexWrap: "wrap",
+    marginTop: "1rem",
+  },
+  filterBar: {
+    display: "flex",
+    gap: "1rem",
+    marginBottom: "2rem",
+    flexWrap: "wrap",
+  },
   searchInput: {
     flex: 1,
     minWidth: "250px",
@@ -109,6 +135,7 @@ const styles = {
     borderRadius: "40px",
     fontSize: "1rem",
     outline: "none",
+    transition: "border-color 0.15s ease, box-shadow 0.15s ease",
     backgroundColor: "#ffffff",
   },
   filterSelect: {
@@ -129,11 +156,18 @@ const styles = {
     backgroundColor: "#ffffff",
     padding: "1.5rem",
     borderRadius: "20px",
-    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    boxShadow:
+      "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
     marginBottom: "1rem",
     border: "1px solid #f1f5f9",
+    transition: "box-shadow 0.2s ease, transform 0.1s ease",
   },
-  taskHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" },
+  taskHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "0.75rem",
+  },
   taskTitle: { fontSize: "1.25rem", fontWeight: 600, margin: 0 },
   priorityBadge: (priority) => ({
     padding: "0.25rem 0.75rem",
@@ -141,14 +175,56 @@ const styles = {
     fontSize: "0.75rem",
     fontWeight: 600,
     textTransform: "uppercase",
-    backgroundColor: priority === "High" ? "#fee2e2" : priority === "Medium" ? "#fef3c7" : "#dcfce7",
-    color: priority === "High" ? "#b91c1c" : priority === "Medium" ? "#b45309" : "#166534",
+    letterSpacing: "0.5px",
+    backgroundColor:
+      priority === "High"
+        ? "#fee2e2"
+        : priority === "Medium"
+        ? "#fef3c7"
+        : "#dcfce7",
+    color:
+      priority === "High"
+        ? "#b91c1c"
+        : priority === "Medium"
+        ? "#b45309"
+        : "#166534",
   }),
-  taskDescription: { color: "#475569", lineHeight: 1.6, marginBottom: "1rem" },
-  taskMeta: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", fontSize: "0.875rem", color: "#64748b" },
-  taskActions: { display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "1rem" },
-  actionButton: { padding: "0.5rem 1rem", borderRadius: "30px", fontSize: "0.875rem", fontWeight: 500, border: "none", cursor: "pointer" },
-  emptyState: { textAlign: "center", padding: "4rem 2rem", backgroundColor: "#ffffff", borderRadius: "24px", color: "#94a3b8", border: "2px dashed #e2e8f0" },
+  taskDescription: {
+    color: "#475569",
+    lineHeight: 1.6,
+    marginBottom: "1rem",
+  },
+  taskMeta: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: "1rem",
+    fontSize: "0.875rem",
+    color: "#64748b",
+  },
+  taskActions: {
+    display: "flex",
+    gap: "0.5rem",
+    flexWrap: "wrap",
+    marginTop: "1rem",
+  },
+  actionButton: {
+    padding: "0.5rem 1rem",
+    borderRadius: "30px",
+    fontSize: "0.875rem",
+    fontWeight: 500,
+    border: "none",
+    cursor: "pointer",
+    transition: "background-color 0.15s ease",
+  },
+  emptyState: {
+    textAlign: "center",
+    padding: "4rem 2rem",
+    backgroundColor: "#ffffff",
+    borderRadius: "24px",
+    color: "#94a3b8",
+    border: "2px dashed #e2e8f0",
+  },
 };
 
 // ------------------ Component ------------------
@@ -170,12 +246,14 @@ export default function Tasks() {
 
   const saveTask = async () => {
     if (!form.title) return alert("Title required");
+
     if (editingTask) {
       await updateTask(editingTask._id, form);
       setEditingTask(null);
     } else {
       await createTask(form);
     }
+
     setForm({ title: "", description: "", priority: "Low", dueDate: "" });
     loadTasks();
   };
@@ -208,9 +286,11 @@ export default function Tasks() {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.header}>📋 Task Manager</h2>
+      <h2 style={styles.header}>
+        <span>📋</span> Task Manager
+      </h2>
 
-      {/* Create / Edit Form */}
+      {/* Form */}
       <div style={styles.formCard}>
         <h3 style={styles.formTitle}>{editingTask ? "Edit Task" : "Create New Task"}</h3>
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -219,6 +299,8 @@ export default function Tasks() {
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             style={styles.input}
+            onFocus={(e) => (e.currentTarget.style.borderColor = styles.inputFocus.borderColor)}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
           />
           <textarea
             placeholder="Description (optional)"
@@ -227,12 +309,21 @@ export default function Tasks() {
             style={styles.textarea}
           />
           <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-            <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} style={styles.select}>
+            <select
+              value={form.priority}
+              onChange={(e) => setForm({ ...form, priority: e.target.value })}
+              style={styles.select}
+            >
               <option>Low</option>
               <option>Medium</option>
               <option>High</option>
             </select>
-            <input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} style={styles.dateInput} />
+            <input
+              type="date"
+              value={form.dueDate}
+              onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+              style={styles.dateInput}
+            />
           </div>
           <div style={styles.buttonGroup}>
             <button onClick={saveTask} style={styles.buttonPrimary}>
@@ -255,8 +346,17 @@ export default function Tasks() {
 
       {/* Search & Filter */}
       <div style={styles.filterBar}>
-        <input placeholder="🔍 Search tasks..." value={search} onChange={(e) => setSearch(e.target.value)} style={styles.searchInput} />
-        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={styles.filterSelect}>
+        <input
+          placeholder="🔍 Search tasks..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={styles.searchInput}
+        />
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          style={styles.filterSelect}
+        >
           <option value="">All statuses</option>
           <option value="Todo">Todo</option>
           <option value="In Progress">In Progress</option>
@@ -268,23 +368,34 @@ export default function Tasks() {
       {filteredTasks.length === 0 ? (
         <div style={styles.emptyState}>
           <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>✨</div>
-          <h3 style={{ fontSize: "1.5rem", fontWeight: 500, marginBottom: "0.5rem" }}>No tasks found</h3>
-          <p>Create your first task to get started</p>
+          <h3 style={{ fontSize: "1.5rem", fontWeight: 500, marginBottom: "0.5rem" }}>
+            No tasks found
+          </h3>
+          <p style={{ color: "#94a3b8" }}>Create your first task to get started</p>
         </div>
       ) : (
         filteredTasks.map((task) => (
           <div key={task._id} style={styles.taskCard}>
             <div style={styles.taskHeader}>
-              <h3 style={{ ...styles.taskTitle, textDecoration: task.status === "Completed" ? "line-through" : "none" }}>
+              <h3
+                style={{
+                  ...styles.taskTitle,
+                  textDecoration: task.status === "Completed" ? "line-through" : "none",
+                  color: task.status === "Completed" ? "#94a3b8" : "#0f172a",
+                }}
+              >
                 {task.title}
               </h3>
               <span style={styles.priorityBadge(task.priority)}>{task.priority}</span>
             </div>
+
             {task.description && <p style={styles.taskDescription}>{task.description}</p>}
+
             <div style={styles.taskMeta}>
               <span>📅 {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No due date"}</span>
               <span>📍 {task.status || "Todo"}</span>
             </div>
+
             <div style={styles.taskActions}>
               {task.status !== "In Progress" && task.status !== "Completed" && (
                 <button onClick={() => changeStatus(task._id, "In Progress")} style={{ ...styles.actionButton, backgroundColor: "#f1f5f9", color: "#1e293b" }}>
