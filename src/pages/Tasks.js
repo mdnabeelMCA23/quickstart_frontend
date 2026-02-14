@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getTasks, createTask, deleteTask, updateTaskStatus, updateTask } from "../services/api";
+import { jwtDecode } from "jwt-decode";
 
 // ------------------ Style Definitions ------------------
 const styles = {
@@ -27,8 +28,7 @@ const styles = {
     backgroundColor: "#ffffff",
     padding: "1.5rem",
     borderRadius: "16px",
-    boxShadow:
-      "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
     marginBottom: "2rem",
     border: "1px solid #edf2f7",
   },
@@ -115,6 +115,28 @@ const styles = {
     cursor: "pointer",
     transition: "background-color 0.15s ease",
   },
+  buttonDanger: {
+    backgroundColor: "#ef4444",
+    color: "white",
+    border: "none",
+    padding: "0.75rem 1.5rem",
+    borderRadius: "12px",
+    fontSize: "1rem",
+    fontWeight: 500,
+    cursor: "pointer",
+    transition: "background-color 0.15s ease",
+  },
+  buttonWarning: {
+    backgroundColor: "#f59e0b",
+    color: "white",
+    border: "none",
+    padding: "0.75rem 1.5rem",
+    borderRadius: "12px",
+    fontSize: "1rem",
+    fontWeight: 500,
+    cursor: "pointer",
+    transition: "background-color 0.15s ease",
+  },
   buttonGroup: {
     display: "flex",
     gap: "0.75rem",
@@ -156,8 +178,7 @@ const styles = {
     backgroundColor: "#ffffff",
     padding: "1.5rem",
     borderRadius: "20px",
-    boxShadow:
-      "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
     marginBottom: "1rem",
     border: "1px solid #f1f5f9",
     transition: "box-shadow 0.2s ease, transform 0.1s ease",
@@ -168,7 +189,11 @@ const styles = {
     alignItems: "center",
     marginBottom: "0.75rem",
   },
-  taskTitle: { fontSize: "1.25rem", fontWeight: 600, margin: 0 },
+  taskTitle: {
+    fontSize: "1.25rem",
+    fontWeight: 600,
+    margin: 0,
+  },
   priorityBadge: (priority) => ({
     padding: "0.25rem 0.75rem",
     borderRadius: "40px",
@@ -177,17 +202,9 @@ const styles = {
     textTransform: "uppercase",
     letterSpacing: "0.5px",
     backgroundColor:
-      priority === "High"
-        ? "#fee2e2"
-        : priority === "Medium"
-        ? "#fef3c7"
-        : "#dcfce7",
+      priority === "High" ? "#fee2e2" : priority === "Medium" ? "#fef3c7" : "#dcfce7",
     color:
-      priority === "High"
-        ? "#b91c1c"
-        : priority === "Medium"
-        ? "#b45309"
-        : "#166534",
+      priority === "High" ? "#b91c1c" : priority === "Medium" ? "#b45309" : "#166534",
   }),
   taskDescription: {
     color: "#475569",
@@ -230,7 +247,12 @@ const styles = {
 // ------------------ Component ------------------
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);
-  const [form, setForm] = useState({ title: "", description: "", priority: "Low", dueDate: "" });
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    priority: "Low",
+    dueDate: "",
+  });
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [editingTask, setEditingTask] = useState(null);
@@ -290,9 +312,10 @@ export default function Tasks() {
         <span>📋</span> Task Manager
       </h2>
 
-      {/* Form */}
+      {/* Create / Edit Task Form */}
       <div style={styles.formCard}>
         <h3 style={styles.formTitle}>{editingTask ? "Edit Task" : "Create New Task"}</h3>
+
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <input
             placeholder="Task title"
@@ -302,12 +325,14 @@ export default function Tasks() {
             onFocus={(e) => (e.currentTarget.style.borderColor = styles.inputFocus.borderColor)}
             onBlur={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
           />
+
           <textarea
             placeholder="Description (optional)"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             style={styles.textarea}
           />
+
           <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
             <select
               value={form.priority}
@@ -318,6 +343,7 @@ export default function Tasks() {
               <option>Medium</option>
               <option>High</option>
             </select>
+
             <input
               type="date"
               value={form.dueDate}
@@ -325,10 +351,17 @@ export default function Tasks() {
               style={styles.dateInput}
             />
           </div>
+
           <div style={styles.buttonGroup}>
-            <button onClick={saveTask} style={styles.buttonPrimary}>
+            <button
+              onClick={saveTask}
+              style={styles.buttonPrimary}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#2563eb")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#3b82f6")}
+            >
               {editingTask ? "Update Task" : "Add Task"}
             </button>
+
             {editingTask && (
               <button
                 onClick={() => {
@@ -336,6 +369,8 @@ export default function Tasks() {
                   setForm({ title: "", description: "", priority: "Low", dueDate: "" });
                 }}
                 style={styles.buttonSecondary}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e2e8f0")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#f1f5f9")}
               >
                 Cancel
               </button>
@@ -375,7 +410,12 @@ export default function Tasks() {
         </div>
       ) : (
         filteredTasks.map((task) => (
-          <div key={task._id} style={styles.taskCard}>
+          <div
+            key={task._id}
+            style={styles.taskCard}
+            onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 10px 15px -3px rgba(0,0,0,0.1)")}
+            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 4px 6px -1px rgba(0,0,0,0.1)")}
+          >
             <div style={styles.taskHeader}>
               <h3
                 style={{
@@ -398,19 +438,39 @@ export default function Tasks() {
 
             <div style={styles.taskActions}>
               {task.status !== "In Progress" && task.status !== "Completed" && (
-                <button onClick={() => changeStatus(task._id, "In Progress")} style={{ ...styles.actionButton, backgroundColor: "#f1f5f9", color: "#1e293b" }}>
+                <button
+                  onClick={() => changeStatus(task._id, "In Progress")}
+                  style={{ ...styles.actionButton, backgroundColor: "#f1f5f9", color: "#1e293b" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e2e8f0")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#f1f5f9")}
+                >
                   Start
                 </button>
               )}
               {task.status !== "Completed" && (
-                <button onClick={() => changeStatus(task._id, "Completed")} style={{ ...styles.actionButton, backgroundColor: "#22c55e", color: "white" }}>
+                <button
+                  onClick={() => changeStatus(task._id, "Completed")}
+                  style={{ ...styles.actionButton, backgroundColor: "#22c55e", color: "white" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#16a34a")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#22c55e")}
+                >
                   Complete
                 </button>
               )}
-              <button onClick={() => editTask(task)} style={{ ...styles.actionButton, backgroundColor: "#f59e0b", color: "white" }}>
+              <button
+                onClick={() => editTask(task)}
+                style={{ ...styles.actionButton, backgroundColor: "#f59e0b", color: "white" }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#d97706")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#f59e0b")}
+              >
                 Edit
               </button>
-              <button onClick={() => removeTask(task._id)} style={{ ...styles.actionButton, backgroundColor: "#ef4444", color: "white" }}>
+              <button
+                onClick={() => removeTask(task._id)}
+                style={{ ...styles.actionButton, backgroundColor: "#ef4444", color: "white" }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ef4444")}
+              >
                 Delete
               </button>
             </div>
