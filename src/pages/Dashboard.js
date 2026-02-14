@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
 import API from "../services/api";
-import jwtDecode from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import {
   Chart as ChartJS,
@@ -39,7 +38,13 @@ export default function Dashboard() {
   };
 
   const styles = {
-    page: { minHeight: "100vh", background: theme.background, padding: "2rem", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color: theme.textPrimary },
+    page: {
+      minHeight: "100vh",
+      background: theme.background,
+      padding: "2rem",
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+      color: theme.textPrimary,
+    },
     header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2.5rem", flexWrap: "wrap", gap: "1rem" },
     title: { fontSize: "2rem", fontWeight: 700, color: "white", letterSpacing: "-0.025em", textShadow: "0 2px 4px rgba(0,0,0,0.1)" },
     buttonGroup: { display: "flex", gap: "0.75rem" },
@@ -65,24 +70,20 @@ export default function Dashboard() {
     navigate("/");
   };
 
-  const goToTasks = () => {
-    navigate("/tasks");
-  };
+  const goToTasks = () => navigate("/tasks");
 
   // ----- Data Fetching -----
   const fetchStats = useCallback(async () => {
     try {
       setError(null);
+      setLoading(true);
       const token = localStorage.getItem("token");
       if (!token) {
         navigate("/");
         return;
       }
 
-      const decoded = jwtDecode(token);
-      const userId = decoded.id || decoded._id;
-
-      const res = await API.get(`/analytics/stats/${userId}`);
+      const res = await API.get(`/analytics/stats`);
       setStats(res.data);
     } catch (err) {
       console.error("Dashboard fetch error:", err);
@@ -97,99 +98,34 @@ export default function Dashboard() {
   }, [fetchStats]);
 
   // ----- Loading & Error States -----
-  if (loading) {
-    return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.loadingSkeleton}>
-          <div style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>📊</div>
-          <div style={{ height: "8px", background: "rgba(255,255,255,0.3)", borderRadius: "4px", marginBottom: "1rem" }} />
-          <div style={{ height: "8px", background: "rgba(255,255,255,0.3)", borderRadius: "4px", width: "80%", margin: "0 auto" }} />
-          <p style={{ marginTop: "1rem" }}>Loading dashboard...</p>
-        </div>
+  if (loading) return (
+    <div style={styles.loadingContainer}>
+      <div style={styles.loadingSkeleton}>
+        <div style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>📊</div>
+        <div style={{ height: "8px", background: "rgba(255,255,255,0.3)", borderRadius: "4px", marginBottom: "1rem" }} />
+        <div style={{ height: "8px", background: "rgba(255,255,255,0.3)", borderRadius: "4px", width: "80%", margin: "0 auto" }} />
+        <p style={{ marginTop: "1rem" }}>Loading dashboard...</p>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (error || !stats) {
-    return (
-      <div style={styles.errorContainer}>
-        <div style={{ fontSize: "3rem" }}>⚠️</div>
-        <h2>{error || "No data available"}</h2>
-        <button
-          onClick={fetchStats}
-          style={{ ...styles.button, ...styles.buttonPrimary, padding: "0.75rem 2rem" }}
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
+  if (error || !stats) return (
+    <div style={styles.errorContainer}>
+      <div style={{ fontSize: "3rem" }}>⚠️</div>
+      <h2>{error || "No data available"}</h2>
+      <button onClick={fetchStats} style={{ ...styles.button, ...styles.buttonPrimary, padding: "0.75rem 2rem" }}>Retry</button>
+    </div>
+  );
 
-  // ----- Prepare data for charts -----
+  // ----- Charts Data -----
   const weekly = stats.weekly_data || [];
-
-  const weeklyChartData = {
-    labels: weekly.map((item) => item.date),
-    datasets: [
-      {
-        label: "Tasks Completed",
-        data: weekly.map((item) => item.count),
-        backgroundColor: "rgba(102, 126, 234, 0.7)",
-        borderRadius: 8,
-      },
-    ],
-  };
-
+  const weeklyChartData = { labels: weekly.map((i) => i.date), datasets: [{ label: "Tasks Completed", data: weekly.map((i) => i.count), backgroundColor: "rgba(102, 126, 234, 0.7)", borderRadius: 8 }] };
   const priorityData = stats.priority_distribution || { Low: 0, Medium: 0, High: 0 };
-  const priorityChartData = {
-    labels: ["Low", "Medium", "High"],
-    datasets: [
-      {
-        data: [priorityData.Low || 0, priorityData.Medium || 0, priorityData.High || 0],
-        backgroundColor: ["#10b981", "#f59e0b", "#ef4444"],
-        borderWidth: 0,
-      },
-    ],
-  };
-
+  const priorityChartData = { labels: ["Low", "Medium", "High"], datasets: [{ data: [priorityData.Low, priorityData.Medium, priorityData.High], backgroundColor: ["#10b981", "#f59e0b", "#ef4444"], borderWidth: 0 }] };
   const statusData = stats.status_distribution || { Todo: 0, "In Progress": 0, Completed: 0 };
-  const statusChartData = {
-    labels: ["Todo", "In Progress", "Completed"],
-    datasets: [
-      {
-        label: "Tasks",
-        data: [
-          statusData.Todo || 0,
-          statusData["In Progress"] || 0,
-          statusData.Completed || 0,
-        ],
-        backgroundColor: ["#94a3b8", "#3b82f6", "#10b981"],
-        borderRadius: 8,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: { backgroundColor: theme.textPrimary, titleColor: "white", bodyColor: "white" },
-    },
-    scales: {
-      y: { beginAtZero: true, grid: { color: "#e2e8f0" } },
-      x: { grid: { display: false } },
-    },
-  };
-
-  const doughnutOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: "bottom", labels: { usePointStyle: true, boxWidth: 8 } },
-    },
-    cutout: "65%",
-  };
+  const statusChartData = { labels: ["Todo", "In Progress", "Completed"], datasets: [{ label: "Tasks", data: [statusData.Todo, statusData["In Progress"], statusData.Completed], backgroundColor: ["#94a3b8", "#3b82f6", "#10b981"], borderRadius: 8 }] };
+  const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: theme.textPrimary, titleColor: "white", bodyColor: "white" } }, scales: { y: { beginAtZero: true, grid: { color: "#e2e8f0" } }, x: { grid: { display: false } } } };
+  const doughnutOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { usePointStyle: true, boxWidth: 8 } } }, cutout: "65%" };
 
   return (
     <div style={styles.page}>
@@ -197,114 +133,42 @@ export default function Dashboard() {
       <div style={styles.header}>
         <h1 style={styles.title}>📈 Task Analytics Dashboard</h1>
         <div style={styles.buttonGroup}>
-          <button
-            style={{ ...styles.button, ...styles.buttonPrimary }}
-            onClick={goToTasks}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8fafc")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
-          >
-            Task Manager
-          </button>
-          <button
-            style={{ ...styles.button, ...styles.buttonDanger }}
-            onClick={logout}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = theme.danger)}
-          >
-            Logout
-          </button>
+          <button style={{ ...styles.button, ...styles.buttonPrimary }} onClick={goToTasks}>Task Manager</button>
+          <button style={{ ...styles.button, ...styles.buttonDanger }} onClick={logout}>Logout</button>
         </div>
       </div>
 
       {/* KPI Cards */}
       <div style={styles.cardsGrid}>
-        <div style={styles.card}>
-          <div style={styles.cardTitle}>📋 Total Tasks</div>
-          <div style={styles.cardValue}>{stats.total_tasks}</div>
-        </div>
-
-        <div style={styles.card}>
-          <div style={styles.cardTitle}>✅ Completed</div>
-          <div style={styles.cardValue}>{stats.completed_tasks}</div>
-          <div style={styles.cardFooter}>
-            {stats.completion_rate}% completion rate
-          </div>
-        </div>
-
-        <div style={styles.card}>
-          <div style={styles.cardTitle}>⏳ Pending</div>
-          <div style={styles.cardValue}>{stats.pending_tasks}</div>
-        </div>
-
-        <div style={styles.card}>
-          <div style={styles.cardTitle}>⚠️ Overdue</div>
-          <div style={styles.cardValue}>{stats.overdue_tasks || 0}</div>
-        </div>
-
-        <div style={styles.card}>
-          <div style={styles.cardTitle}>🔴 High Priority</div>
-          <div style={styles.cardValue}>{priorityData.High || 0}</div>
-        </div>
-
-        <div style={styles.card}>
-          <div style={styles.cardTitle}>🟡 Medium Priority</div>
-          <div style={styles.cardValue}>{priorityData.Medium || 0}</div>
-        </div>
-
-        <div style={styles.card}>
-          <div style={styles.cardTitle}>🟢 Low Priority</div>
-          <div style={styles.cardValue}>{priorityData.Low || 0}</div>
-        </div>
+        <div style={styles.card}><div style={styles.cardTitle}>📋 Total Tasks</div><div style={styles.cardValue}>{stats.total_tasks}</div></div>
+        <div style={styles.card}><div style={styles.cardTitle}>✅ Completed</div><div style={styles.cardValue}>{stats.completed_tasks}</div><div style={styles.cardFooter}>{stats.completion_rate}% completion rate</div></div>
+        <div style={styles.card}><div style={styles.cardTitle}>⏳ Pending</div><div style={styles.cardValue}>{stats.pending_tasks}</div></div>
+        <div style={styles.card}><div style={styles.cardTitle}>⚠️ Overdue</div><div style={styles.cardValue}>{stats.overdue_tasks || 0}</div></div>
+        <div style={styles.card}><div style={styles.cardTitle}>🔴 High Priority</div><div style={styles.cardValue}>{priorityData.High}</div></div>
+        <div style={styles.card}><div style={styles.cardTitle}>🟡 Medium Priority</div><div style={styles.cardValue}>{priorityData.Medium}</div></div>
+        <div style={styles.card}><div style={styles.cardTitle}>🟢 Low Priority</div><div style={styles.cardValue}>{priorityData.Low}</div></div>
       </div>
 
-      {/* Charts Row (Priority & Status) */}
+      {/* Charts */}
       <div style={styles.chartsRow}>
-        {/* Priority Distribution */}
         <div style={styles.chartCard}>
-          <h3 style={styles.chartTitle}>
-            <span>🎯</span> Priority Distribution
-          </h3>
+          <h3 style={styles.chartTitle}>🎯 Priority Distribution</h3>
           <div style={{ height: "250px" }}>
-            {priorityData.Low || priorityData.Medium || priorityData.High ? (
-              <Doughnut data={priorityChartData} options={doughnutOptions} />
-            ) : (
-              <p style={{ color: theme.textSecondary, textAlign: "center", marginTop: "4rem" }}>
-                No tasks by priority
-              </p>
-            )}
+            {priorityData.Low || priorityData.Medium || priorityData.High ? <Doughnut data={priorityChartData} options={doughnutOptions} /> : <p style={{ color: theme.textSecondary, textAlign: "center", marginTop: "4rem" }}>No tasks by priority</p>}
           </div>
         </div>
-
-        {/* Status Distribution */}
         <div style={styles.chartCard}>
-          <h3 style={styles.chartTitle}>
-            <span>📌</span> Status Breakdown
-          </h3>
+          <h3 style={styles.chartTitle}>📌 Status Breakdown</h3>
           <div style={{ height: "250px" }}>
-            {statusData.Todo || statusData["In Progress"] || statusData.Completed ? (
-              <Bar data={statusChartData} options={chartOptions} />
-            ) : (
-              <p style={{ color: theme.textSecondary, textAlign: "center", marginTop: "4rem" }}>
-                No tasks by status
-              </p>
-            )}
+            {statusData.Todo || statusData["In Progress"] || statusData.Completed ? <Bar data={statusChartData} options={chartOptions} /> : <p style={{ color: theme.textSecondary, textAlign: "center", marginTop: "4rem" }}>No tasks by status</p>}
           </div>
         </div>
       </div>
 
-      {/* Weekly Productivity Chart */}
       <div style={styles.chartCard}>
-        <h3 style={styles.chartTitle}>
-          <span>📊</span> Weekly Productivity
-        </h3>
+        <h3 style={styles.chartTitle}>📊 Weekly Productivity</h3>
         <div style={{ height: "300px" }}>
-          {weekly.length > 0 ? (
-            <Bar data={weeklyChartData} options={chartOptions} />
-          ) : (
-            <p style={{ color: theme.textSecondary, textAlign: "center", marginTop: "4rem" }}>
-              No completed tasks this week yet.
-            </p>
-          )}
+          {weekly.length > 0 ? <Bar data={weeklyChartData} options={chartOptions} /> : <p style={{ color: theme.textSecondary, textAlign: "center", marginTop: "4rem" }}>No completed tasks this week yet.</p>}
         </div>
       </div>
     </div>
