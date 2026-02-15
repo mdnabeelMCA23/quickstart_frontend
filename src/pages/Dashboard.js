@@ -194,7 +194,7 @@ export default function Dashboard() {
       const decoded = jwtDecode(token);
       const userId = decoded.id || decoded._id;
 
-      const res = await API.get(`/analytics/stats/${userId}`);
+      const res = await  ANALYTICS_API.get(`/analytics/stats/${userId}`);
       setStats(res.data);
     } catch (err) {
       console.error("Dashboard fetch error:", err);
