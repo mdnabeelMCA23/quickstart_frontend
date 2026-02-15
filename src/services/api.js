@@ -21,6 +21,6 @@ export const updateTask = (id, data) => API.put(`/tasks/${id}`, data, { headers:
 // Auth endpoints
 export const registerUser = (data) => API.post("/auth/register", data);
 export const loginUser = (data) => API.post("/auth/login", data);
-export const getAnalytics = (userId) => API.get(`/analytics/stats/${userId}`, { headers: getAuthHeaders() });
+export const getAnalytics = (userId) => (`https://node-backend-hsdn.onrender.com/analytics/stats/${userId}`, { headers: getAuthHeaders() });
 
 export default API;
